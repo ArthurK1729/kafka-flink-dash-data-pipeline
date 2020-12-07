@@ -1,0 +1,25 @@
+[flake8]
+filename = *.py
+max-line-length = 120
+
+# Show the number of occurrences of each error
+statistics = True
+
+exclude =
+    # Don't need to waste time traversing the git directory
+    .git,
+
+    # Ignore any virtual environments, as it's not our code
+    *env,
+    *venv,
+    *ENV/,
+    *env.bak/,
+    *venv.bak/,
+    .direnv/,
+    src/migrations/*,
+
+    # Don't waste time traversing kubernetes configs
+    k8s,
+
+    # No value in checking cached directories
+    __pycache__

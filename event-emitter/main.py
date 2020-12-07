@@ -1,26 +1,48 @@
 import asyncio
+import time
+from itertools import islice
 
-from aiokafka import AIOKafkaProducer
-
+from constants import DELAY_SECONDS, MESSAGES_IN_BATCH
+from generators import gaussian_process_generator
 from logger import logger
+from models import TimeseriesReading
+from producer import AsyncKafkaProducer
+import utils
+
+
+# TODO: create argument options and process selector
+# TODO: actually create a cli to run these generators
+#   event-emitter generator gaussian_process --mean 2.5 --std 5.3 --start 1.1 --topic ts-events
+#   event-emitter generator gaussian_noise --mean 2.5 --std 0.0 --topic ts-events
+#   event-emitter generator brown_noise --mean 2.5 --std 0.1 --topic ts-events
 
 
 async def main():
+    logger.info("Initialising generator")
+    generator = gaussian_process_generator(mean=5.0, std=2.0, start=0.0)
+    logger.info("Generator initialised")
+
     logger.info("Starting producer")
-    producer = AIOKafkaProducer(
-        bootstrap_servers='172.18.0.3:9092',
-        request_timeout_ms=5000
-    )
-    # Get cluster layout and initial topic/partition leadership information
+    producer = AsyncKafkaProducer()
     await producer.start()
     logger.info("Producer started")
 
     try:
-        # Produce message
-        await producer.send_and_wait("my_topic", b"Super message")
-        logger.info("Message sent")
+        while True:
+            time.sleep(DELAY_SECONDS)
+
+            await asyncio.gather(
+                *[
+                    producer.post_event(
+                        event=TimeseriesReading(number=num, timestamp=utils.generate_current_timestamp()),
+                        topic="ts-events",
+                    )
+                    for num in islice(generator, MESSAGES_IN_BATCH)
+                ]
+            )
+
+            logger.info(f"Message batch of {MESSAGES_IN_BATCH} sent in {DELAY_SECONDS} second(s)")
     finally:
-        # Wait for all pending messages to be delivered or expire.
         await producer.stop()
         logger.info("Producer stopped")
 
