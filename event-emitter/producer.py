@@ -5,8 +5,8 @@ import utils
 
 
 class AsyncKafkaProducer:
-    def __init__(self):
-        self._producer = AIOKafkaProducer(bootstrap_servers="localhost:9092", request_timeout_ms=5000)
+    def __init__(self, bootstrap_servers: str, request_timeout_ms: int):
+        self._producer = AIOKafkaProducer(bootstrap_servers=bootstrap_servers, request_timeout_ms=request_timeout_ms)
 
     async def start(self):
         await self._producer.start()

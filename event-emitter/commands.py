@@ -1,29 +1,29 @@
 import asyncio
 import time
 from itertools import islice
+from typing import Generator
 
+import utils
 from constants import DELAY_SECONDS, MESSAGES_IN_BATCH
-from generators import gaussian_process_generator
 from logger import logger
 from models import TimeseriesReading
 from producer import AsyncKafkaProducer
-import utils
 
 
 # TODO: create argument options and process selector
 # TODO: actually create a cli to run these generators
-#   event-emitter generator gaussian_process --mean 2.5 --std 5.3 --start 1.1 --topic ts-events
-#   event-emitter generator gaussian_noise --mean 2.5 --std 0.0 --topic ts-events
-#   event-emitter generator brown_noise --mean 2.5 --std 0.1 --topic ts-events
+#   event-emitter generate gaussian_process --mean 2.5 --std 5.3 --start 1.1 --topic ts-events
+#   event-emitter generate gaussian_noise --mean 2.5 --std 0.0 --topic ts-events
+#   event-emitter generate brown_noise --mean 2.5 --std 0.1 --topic ts-events
 
 
-async def main():
+async def start_generate(generator: Generator):
     logger.info("Initialising generator")
-    generator = gaussian_process_generator(mean=5.0, std=2.0, start=0.0)
+    generator = generator()
     logger.info("Generator initialised")
 
     logger.info("Starting producer")
-    producer = AsyncKafkaProducer()
+    producer = AsyncKafkaProducer(bootstrap_servers="localhost:9092", request_timeout_ms=5000)
     await producer.start()
     logger.info("Producer started")
 
@@ -45,7 +45,3 @@ async def main():
     finally:
         await producer.stop()
         logger.info("Producer stopped")
-
-
-if __name__ == "__main__":
-    asyncio.run(main())

@@ -1,0 +1,18 @@
+{
+    "type" : "record",
+    "name" : "timeseriesReading",
+    "namespace" : "com.events",
+    "fields" : [
+        {
+            "name" : "reading", 
+            "type" : "double", 
+            "default" : 0.0
+        },
+
+        {
+            "name" : "timestamp", 
+            "type" : "int", 
+            "default" : -1
+        },
+    ]
+} 
