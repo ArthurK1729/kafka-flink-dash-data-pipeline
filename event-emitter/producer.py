@@ -14,5 +14,5 @@ class AsyncKafkaProducer:
     async def stop(self):
         await self._producer.stop()
 
-    async def post_event(self, event: BaseModel, topic: str):
-        await self._producer.send_and_wait(topic, utils.string_to_binary(event.json()))
+    async def post_event(self, event: bytes, topic: str):
+        await self._producer.send_and_wait(topic, event)
