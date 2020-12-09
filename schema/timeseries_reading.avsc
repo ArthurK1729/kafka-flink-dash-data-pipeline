@@ -1,0 +1,14 @@
+{
+    "type": "record",
+    "name": "TimeseriesReading",
+    "fields": [
+        {
+            "name": "reading",
+            "type": "double"
+        },
+        {
+            "name": "timestamp",
+            "type": "int"
+        }
+    ]
+}
