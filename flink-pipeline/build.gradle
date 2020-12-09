@@ -1,0 +1,85 @@
+import com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath "io.freefair.gradle:lombok-plugin:5.3.0"
+        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
+    }
+}
+
+plugins {
+    id "java"
+    id "com.diffplug.spotless" version "5.5.1"
+    id "com.github.johnrengelman.shadow" version "6.1.0"
+    id "com.commercehub.gradle.plugin.avro" version "0.21.0"
+}
+
+apply plugin: "io.freefair.lombok"
+apply plugin: "com.github.johnrengelman.shadow"
+apply plugin: "com.commercehub.gradle.plugin.avro-base"
+
+group = "com.pipeline"
+version = "0.0.1-SNAPSHOT"
+sourceCompatibility = "11"
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+dependencies {
+    compile "org.apache.flink:flink-connector-kafka_2.11:${project.properties['flink_version']}"
+    compile "org.apache.flink:flink-avro:${project.properties['flink_version']}"
+    compile "org.apache.flink:flink-core:${project.properties['flink_version']}"
+    compile "org.apache.flink:flink-streaming-java_2.11:${project.properties['flink_version']}"
+    compile "org.apache.avro:avro:${project.properties['avro_version']}"
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${project.properties['jupiter_version']}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    implementation "com.google.guava:guava:29.0-jre"
+}
+
+spotless {
+    java {
+        googleJavaFormat("1.9").aosp()
+        target fileTree(rootDir) {
+            include '**/*.java'
+            exclude '**/com/pipeline/models/*.*'
+        }
+    }
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.pipeline.TimeseriesAnalysisJob"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+def generateAvro = tasks.register("generateAvro", GenerateAvroJavaTask) {
+    source("../schema")
+    outputDir = file("generated/com/pipeline/models")
+}
+
+tasks.named("compileJava").configure {
+    source(generateAvro)
+}
