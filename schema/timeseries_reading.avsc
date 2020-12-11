@@ -1,6 +1,7 @@
 {
     "type": "record",
     "name": "TimeseriesReading",
+    "namespace": "com.pipeline.models",
     "fields": [
         {
             "name": "reading",

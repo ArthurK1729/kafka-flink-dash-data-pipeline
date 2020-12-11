@@ -22,11 +22,18 @@ plugins {
 
 apply plugin: "io.freefair.lombok"
 apply plugin: "com.github.johnrengelman.shadow"
+// https://github.com/davidmc24/gradle-avro-plugin
 apply plugin: "com.commercehub.gradle.plugin.avro-base"
 
 group = "com.pipeline"
 version = "0.0.1-SNAPSHOT"
 sourceCompatibility = "11"
+
+sourceSets {
+    main {
+        java.srcDirs += "generated"
+    }
+}
 
 configurations {
     compileOnly {
@@ -77,7 +84,7 @@ jar {
 
 def generateAvro = tasks.register("generateAvro", GenerateAvroJavaTask) {
     source("../schema")
-    outputDir = file("generated/com/pipeline/models")
+    outputDir = file("generated")
 }
 
 tasks.named("compileJava").configure {
