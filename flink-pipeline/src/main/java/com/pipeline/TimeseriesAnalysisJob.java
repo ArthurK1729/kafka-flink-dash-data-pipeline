@@ -2,14 +2,12 @@ package com.pipeline;
 
 import com.pipeline.models.TimeseriesReading;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
-import org.apache.flink.api.common.functions.ReduceFunction;
-import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
-import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
-import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
-import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
+import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 import java.time.Duration;
@@ -20,7 +18,7 @@ public class TimeseriesAnalysisJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
         Properties properties = new Properties();
-        properties.setProperty("bootstrap.servers", "localhost:9092");
+        properties.setProperty("bootstrap.servers", "broker:29092");
         properties.setProperty("group.id", "test");
 
         var kafkaSource =
@@ -36,10 +34,11 @@ public class TimeseriesAnalysisJob {
                 WatermarkStrategy.<TimeseriesReading>forBoundedOutOfOrderness(Duration.ofSeconds(2))
                         .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
 
-        DataStream<TimeseriesReading> stream = env.addSource(kafkaSource);
+        DataStream<TimeseriesReading> stream = env.addSource(kafkaSource).name("kafkaSource");
 
         stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(1)))
-                .process(new AverageAggregator());
+                .process(new AverageAggregator())
+                .name("aggregatedTimeseriesReadings");
 
         stream.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
 

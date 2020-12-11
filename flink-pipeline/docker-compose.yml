@@ -22,3 +22,7 @@ services:
         FLINK_PROPERTIES=
         jobmanager.rpc.address: jobmanager
         taskmanager.numberOfTaskSlots: 2
+networks:
+  default:
+    external:
+      name: kafka-flink-dash-data-pipeline-network
