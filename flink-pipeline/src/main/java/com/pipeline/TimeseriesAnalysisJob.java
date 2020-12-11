@@ -3,6 +3,7 @@ package com.pipeline;
 import com.pipeline.models.TimeseriesReading;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
+import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
@@ -16,23 +17,27 @@ import java.util.Properties;
 public class TimeseriesAnalysisJob {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
+        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
         Properties properties = new Properties();
+        // TODO: Do something about auto-commit here
         properties.setProperty("bootstrap.servers", "broker:29092");
         properties.setProperty("group.id", "test");
-
-        var kafkaSource =
-                new FlinkKafkaConsumer<>(
-                        "ts-events",
-                        AvroDeserializationSchema.forSpecific(TimeseriesReading.class),
-                        properties);
 
         // TODO: Kafka-partition-aware strategy?
         //
         // https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/event_timestamps_watermarks.html#watermark-strategies-and-the-kafka-connector
-        kafkaSource.assignTimestampsAndWatermarks(
-                WatermarkStrategy.<TimeseriesReading>forBoundedOutOfOrderness(Duration.ofSeconds(2))
-                        .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
+
+        var kafkaSource =
+                new FlinkKafkaConsumer<>(
+                                "ts-events",
+                                AvroDeserializationSchema.forSpecific(TimeseriesReading.class),
+                                properties)
+                        .assignTimestampsAndWatermarks(
+                                WatermarkStrategy.<TimeseriesReading>forBoundedOutOfOrderness(
+                                                Duration.ofSeconds(2))
+                                        .withTimestampAssigner(
+                                                (event, timestamp) -> event.getTimestamp()));
 
         DataStream<TimeseriesReading> stream = env.addSource(kafkaSource).name("kafkaSource");
 
