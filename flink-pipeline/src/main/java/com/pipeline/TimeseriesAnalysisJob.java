@@ -2,9 +2,14 @@ package com.pipeline;
 
 import com.pipeline.models.TimeseriesReading;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
+import org.apache.flink.api.common.functions.ReduceFunction;
+import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
+import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
+import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
 import org.apache.flink.streaming.api.datastream.DataStream;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
+import org.apache.flink.streaming.api.windowing.assigners.TumblingEventTimeWindows;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
 import java.time.Duration;
@@ -32,6 +37,11 @@ public class TimeseriesAnalysisJob {
                         .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
 
         DataStream<TimeseriesReading> stream = env.addSource(kafkaSource);
+
+        stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(1)))
+                .process(new AverageAggregator());
+
+        stream.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
 
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
