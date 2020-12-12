@@ -28,17 +28,19 @@ public class TimeseriesAnalysisJob {
                         WatermarkStrategy.<TimeseriesReading>forBoundedOutOfOrderness(
                                         Duration.ofSeconds(1))
                                 .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
+        //
+        //var aggregatedReadings =
+        //        stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(1)))
+        //                .process(new AverageAggregator())
+        //                .name("aggregatedTimeseriesReadings");
 
-        var aggregatedReadings =
-                stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(1)))
-                        .process(new AverageAggregator())
-                        .name("aggregatedTimeseriesReadings");
+        //aggregatedReadings.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
 
-        aggregatedReadings.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
+        stream.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
 
-        if (System.getenv("BROKER_ADDRESS") != null) {
-            aggregatedReadings.writeAsText("/data/output.txt");
-        }
+        //if (System.getenv("BROKER_ADDRESS") != null) {
+        //    aggregatedReadings.writeAsText("/data/output.txt");
+        //}
 
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
