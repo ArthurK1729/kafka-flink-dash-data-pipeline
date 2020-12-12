@@ -1,6 +1,9 @@
 package com.pipeline;
 
 import com.pipeline.models.TimeseriesReading;
+import java.time.Duration;
+import java.util.List;
+import java.util.Properties;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -11,16 +14,12 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Properties;
-
 public class TimeseriesAnalysisJob {
     public static void main(String[] args) throws Exception {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        var source = getKafkaSource(env).name("source");
+        var source = getLocalSource(env).name("source");
 
         var stream =
                 source.assignTimestampsAndWatermarks(
@@ -28,11 +27,12 @@ public class TimeseriesAnalysisJob {
                                         Duration.ofSeconds(2))
                                 .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
 
-        stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(3)))
-                .process(new AverageAggregator())
-                .name("aggregatedTimeseriesReadings");
+        var aggregatedReadings =
+                stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(3)))
+                        .process(new AverageAggregator())
+                        .name("aggregatedTimeseriesReadings");
 
-        stream.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
+        aggregatedReadings.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
 
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
@@ -41,12 +41,12 @@ public class TimeseriesAnalysisJob {
             StreamExecutionEnvironment env) {
         return env.fromCollection(
                 List.of(
-                        new TimeseriesReading(2.5, 12312),
-                        new TimeseriesReading(2.38, 12313),
-                        new TimeseriesReading(10.0, 12314),
-                        new TimeseriesReading(10002.334, 12315),
-                        new TimeseriesReading(8893.3, 12316),
-                        new TimeseriesReading(3.3, 12317)));
+                        new TimeseriesReading(2.5, 1607805624),
+                        new TimeseriesReading(2.38, 1607805624 + 1),
+                        new TimeseriesReading(10.0, 1607805624 + 2),
+                        new TimeseriesReading(10002.334, 1607805624 + 3),
+                        new TimeseriesReading(8893.3, 1607805624 + 4),
+                        new TimeseriesReading(3.3, 1607805624 + 5)));
     }
 
     private static DataStreamSource<TimeseriesReading> getKafkaSource(
