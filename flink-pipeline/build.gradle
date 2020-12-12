@@ -47,11 +47,15 @@ repositories {
 }
 
 dependencies {
-    compile "org.apache.flink:flink-connector-kafka_2.11:${project.properties['flink_version']}"
-    compile "org.apache.flink:flink-avro:${project.properties['flink_version']}"
-    compile "org.apache.flink:flink-core:${project.properties['flink_version']}"
-    compile "org.apache.flink:flink-streaming-java_2.11:${project.properties['flink_version']}"
-    compile "org.apache.avro:avro:${project.properties['avro_version']}"
+    implementation "org.apache.flink:flink-connector-kafka_2.11:${project.properties['flink_version']}"
+    implementation "org.apache.flink:flink-avro:${project.properties['flink_version']}"
+    implementation "org.apache.flink:flink-core:${project.properties['flink_version']}"
+    implementation "org.apache.flink:flink-streaming-java_2.11:${project.properties['flink_version']}"
+    implementation "org.apache.avro:avro:${project.properties['avro_version']}"
+    // For local IDE execution
+    // Make sure to enable Include dependencies with Provided scope in Intellij's run config
+    runtimeOnly "org.apache.flink:flink-clients_2.11:${project.properties['flink_version']}"
+
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.properties['jupiter_version']}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
