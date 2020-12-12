@@ -3,6 +3,7 @@ package com.pipeline;
 import com.pipeline.models.TimeseriesReading;
 import java.time.Duration;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
@@ -19,16 +20,16 @@ public class TimeseriesAnalysisJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        var source = getLocalSource(env).name("source");
+        var source = getKafkaSource(env).name("source");
 
         var stream =
                 source.assignTimestampsAndWatermarks(
                         WatermarkStrategy.<TimeseriesReading>forBoundedOutOfOrderness(
-                                        Duration.ofSeconds(2))
+                                        Duration.ofSeconds(1))
                                 .withTimestampAssigner((event, timestamp) -> event.getTimestamp()));
 
         var aggregatedReadings =
-                stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(10), Time.seconds(3)))
+                stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(1)))
                         .process(new AverageAggregator())
                         .name("aggregatedTimeseriesReadings");
 
@@ -37,16 +38,18 @@ public class TimeseriesAnalysisJob {
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
 
+    // Use this for IDE debugging
     private static DataStreamSource<TimeseriesReading> getLocalSource(
             StreamExecutionEnvironment env) {
+        var beginningOfTime = 1607805624L;
         return env.fromCollection(
                 List.of(
-                        new TimeseriesReading(2.5, 1607805624),
-                        new TimeseriesReading(2.38, 1607805624 + 1),
-                        new TimeseriesReading(10.0, 1607805624 + 2),
-                        new TimeseriesReading(10002.334, 1607805624 + 3),
-                        new TimeseriesReading(8893.3, 1607805624 + 4),
-                        new TimeseriesReading(3.3, 1607805624 + 5)));
+                        new TimeseriesReading(2.5, beginningOfTime),
+                        new TimeseriesReading(2.38, beginningOfTime + 1),
+                        new TimeseriesReading(10.0, beginningOfTime + 2),
+                        new TimeseriesReading(10002.334, beginningOfTime + 3),
+                        new TimeseriesReading(8893.3, beginningOfTime + 4),
+                        new TimeseriesReading(3.3, beginningOfTime + 5)));
     }
 
     private static DataStreamSource<TimeseriesReading> getKafkaSource(
@@ -54,9 +57,12 @@ public class TimeseriesAnalysisJob {
         // TODO: kafka partition aware
         // https://ci.apache.org/projects/flink/flink-docs-release-1.12/dev/event_timestamps_watermarks.html#watermark-strategies-and-the-kafka-connector
         Properties properties = new Properties();
-        // TODO: Do something about auto-commit here
-        properties.setProperty("bootstrap.servers", "broker:29092");
+        properties.setProperty(
+                "bootstrap.servers",
+                Optional.ofNullable(System.getenv("BROKER_ADDRESS")).orElse("localhost:9092")
+        );
         properties.setProperty("group.id", "test");
+        properties.setProperty("enable.auto.commit", "false");
 
         var kafkaSource =
                 new FlinkKafkaConsumer<>(
