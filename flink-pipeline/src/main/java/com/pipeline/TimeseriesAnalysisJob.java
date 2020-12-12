@@ -1,10 +1,6 @@
 package com.pipeline;
 
 import com.pipeline.models.TimeseriesReading;
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
 import org.apache.flink.streaming.api.TimeCharacteristic;
@@ -14,6 +10,11 @@ import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
+
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
 
 public class TimeseriesAnalysisJob {
     public static void main(String[] args) throws Exception {
@@ -34,6 +35,10 @@ public class TimeseriesAnalysisJob {
                         .name("aggregatedTimeseriesReadings");
 
         aggregatedReadings.addSink(new PrintSinkFunction<>(false)).name("aggregationOutput");
+
+        if (System.getenv("BROKER_ADDRESS") != null) {
+            aggregatedReadings.writeAsText("/data/output.txt");
+        }
 
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
@@ -59,8 +64,7 @@ public class TimeseriesAnalysisJob {
         Properties properties = new Properties();
         properties.setProperty(
                 "bootstrap.servers",
-                Optional.ofNullable(System.getenv("BROKER_ADDRESS")).orElse("localhost:9092")
-        );
+                Optional.ofNullable(System.getenv("BROKER_ADDRESS")).orElse("localhost:9092"));
         properties.setProperty("group.id", "test");
         properties.setProperty("enable.auto.commit", "false");
 
