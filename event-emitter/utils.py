@@ -10,7 +10,7 @@ def string_to_binary(string: str) -> bytes:
 
 
 def generate_current_epoch_time() -> int:
-    return int(datetime.now(tz=timezone.utc).timestamp())
+    return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
 
 def model_to_bytes(event: BaseModel, avro_schema: dict) -> bytes:
