@@ -9,7 +9,7 @@ def string_to_binary(string: str) -> bytes:
     return string.encode("utf-8")
 
 
-def generate_current_epoch_time() -> int:
+def generate_current_epoch_time_ms() -> int:
     return int(datetime.now(tz=timezone.utc).timestamp() * 1000)
 
 

@@ -32,7 +32,7 @@ async def start_generate(generator: Generator, topic: str, brokers: str, delay_s
                 *[
                     producer.post_event(
                         event=utils.model_to_bytes(
-                            TimeseriesReading(reading=num, timestamp=utils.generate_current_epoch_time()),
+                            TimeseriesReading(reading=num, timestamp=utils.generate_current_epoch_time_ms()),
                             avro_schema=message_schema
                         ),
                         topic=topic

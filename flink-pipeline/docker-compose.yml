@@ -13,6 +13,7 @@ services:
         jobmanager.rpc.address: jobmanager
     volumes:
       - /tmp/data:/data
+      - /tmp/checkpoints:/checkpoints
 
   taskmanager:
     image: flink:1.11.2-scala_2.11-java11
@@ -27,6 +28,7 @@ services:
         taskmanager.numberOfTaskSlots: 2
     volumes:
       - /tmp/data:/data
+      - /tmp/checkpoints:/checkpoints
 networks:
   default:
     external:
