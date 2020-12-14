@@ -53,15 +53,15 @@ public class TimeseriesAnalysisJob {
     private static DataStreamSource<TimeseriesReading> getLocalSource(
             StreamExecutionEnvironment env) {
         var beginningOfTime = 1607805624L;
-        
+
         return env.fromCollection(
                 List.of(
-                        new TimeseriesReading(2.5, beginningOfTime),
-                        new TimeseriesReading(2.38, beginningOfTime + 1),
-                        new TimeseriesReading(10.0, beginningOfTime + 2),
-                        new TimeseriesReading(10002.334, beginningOfTime + 3),
-                        new TimeseriesReading(8893.3, beginningOfTime + 4),
-                        new TimeseriesReading(3.3, beginningOfTime + 5)));
+                        new TimeseriesReading(0, 2.5, beginningOfTime),
+                        new TimeseriesReading(0, 2.38, beginningOfTime + 1),
+                        new TimeseriesReading(0, 10.0, beginningOfTime + 2),
+                        new TimeseriesReading(0, 10002.334, beginningOfTime + 3),
+                        new TimeseriesReading(0, 8893.3, beginningOfTime + 4),
+                        new TimeseriesReading(0, 3.3, beginningOfTime + 5)));
     }
 
     private static DataStreamSource<TimeseriesReading> getKafkaSource(
