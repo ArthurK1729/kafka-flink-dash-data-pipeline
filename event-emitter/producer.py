@@ -9,7 +9,7 @@ class AsyncKafkaProducer:
             bootstrap_servers=bootstrap_servers,
             request_timeout_ms=request_timeout_ms,
             client_id=str(uuid.uuid4()),
-            compression_type="gzip"
+            compression_type="gzip",
         )
 
     async def start(self):

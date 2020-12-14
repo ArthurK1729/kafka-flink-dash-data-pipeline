@@ -4,6 +4,10 @@
     "namespace": "com.pipeline.models",
     "fields": [
         {
+            "name": "id",
+            "type": "int"
+        },
+        {
             "name": "reading",
             "type": "double"
         },

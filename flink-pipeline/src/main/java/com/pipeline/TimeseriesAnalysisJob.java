@@ -7,6 +7,7 @@ import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
+import org.apache.flink.streaming.api.functions.sink.filesystem.StreamingFileSink;
 import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindows;
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
@@ -21,7 +22,7 @@ public class TimeseriesAnalysisJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
 
-        var source = getKafkaSource(env).name("source");
+        var source = getLocalSource(env).name("source");
 
         var stream =
                 source.assignTimestampsAndWatermarks(
@@ -34,6 +35,7 @@ public class TimeseriesAnalysisJob {
                         .process(new AverageAggregator())
                         .name("aggregatedTimeseriesReadings");
 
+        // StreamingFileSink -- Maciej's article
         aggregatedReadings
                 .setParallelism(1)
                 .addSink(new PrintSinkFunction<>(false))
@@ -41,15 +43,17 @@ public class TimeseriesAnalysisJob {
 
         if (System.getenv("BROKER_ADDRESS") != null) {
             aggregatedReadings.setParallelism(1).writeAsText("/data/output.txt");
+        } else {
+            aggregatedReadings.setParallelism(1).writeAsText("/tmp/data/output.txt");
         }
 
         env.execute(TimeseriesAnalysisJob.class.getName());
     }
 
-    // Use this for IDE debugging
     private static DataStreamSource<TimeseriesReading> getLocalSource(
             StreamExecutionEnvironment env) {
         var beginningOfTime = 1607805624L;
+        
         return env.fromCollection(
                 List.of(
                         new TimeseriesReading(2.5, beginningOfTime),

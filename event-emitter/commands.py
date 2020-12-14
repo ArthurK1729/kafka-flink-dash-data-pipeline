@@ -1,5 +1,6 @@
 import asyncio
 import time
+from dataclasses import dataclass
 from itertools import islice
 from pathlib import Path
 from typing import Generator
@@ -12,11 +13,21 @@ from models import TimeseriesReading
 from producer import AsyncKafkaProducer
 
 
+@dataclass
+class GeneratorConfig:
+    timeseries_id: int
+    topic: str
+    brokers: str
+    delay_seconds: int
+    batch_size: int
+    generator: Generator
+
+
 # TODO: handle kafka keys
 #   add a key partitioner?
-async def start_generate(generator: Generator, topic: str, brokers: str, delay_seconds: int, batch_size: int):
+async def start_generate(config: GeneratorConfig):
     logger.info("Starting producer")
-    producer = AsyncKafkaProducer(bootstrap_servers=brokers, request_timeout_ms=5000)
+    producer = AsyncKafkaProducer(bootstrap_servers=config.brokers, request_timeout_ms=5000)
     await producer.start()
     logger.info("Producer started")
 
@@ -26,22 +37,24 @@ async def start_generate(generator: Generator, topic: str, brokers: str, delay_s
 
     try:
         while True:
-            time.sleep(delay_seconds)
+            time.sleep(config.delay_seconds)
 
             await asyncio.gather(
                 *[
                     producer.post_event(
                         event=utils.model_to_bytes(
-                            TimeseriesReading(reading=num, timestamp=utils.generate_current_epoch_time_ms()),
-                            avro_schema=message_schema
+                            TimeseriesReading(
+                                id=config.timeseries_id, reading=num, timestamp=utils.generate_current_epoch_time_ms()
+                            ),
+                            avro_schema=message_schema,
                         ),
-                        topic=topic
+                        topic=config.topic,
                     )
-                    for num in islice(generator, batch_size)
+                    for num in islice(config.generator, config.batch_size)
                 ]
             )
 
-            logger.info(f"Message batch of {batch_size} sent in {delay_seconds} second(s)")
+            logger.info(f"Message batch of {config.batch_size} sent in {config.delay_seconds} second(s)")
     finally:
         await producer.stop()
         logger.info("Producer stopped")
