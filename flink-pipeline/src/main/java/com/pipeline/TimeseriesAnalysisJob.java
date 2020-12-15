@@ -1,17 +1,10 @@
 package com.pipeline;
 
 import com.pipeline.models.TimeseriesReading;
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.core.fs.Path;
 import org.apache.flink.formats.avro.AvroDeserializationSchema;
-import org.apache.flink.streaming.api.TimeCharacteristic;
 import org.apache.flink.streaming.api.datastream.DataStreamSource;
 import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.streaming.api.functions.sink.PrintSinkFunction;
@@ -22,6 +15,15 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
+
+import static org.apache.flink.streaming.api.TimeCharacteristic.EventTime;
+
 public class TimeseriesAnalysisJob {
     private static final Logger LOGGER = Logger.getLogger(TimeseriesAnalysisJob.class.getName());
 
@@ -29,7 +31,7 @@ public class TimeseriesAnalysisJob {
         var envConfig = Environment.fromEnv();
 
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
-        env.setStreamTimeCharacteristic(TimeCharacteristic.EventTime);
+        env.setStreamTimeCharacteristic(EventTime);
 
         var source = getKafkaSource(env).name("source");
 
