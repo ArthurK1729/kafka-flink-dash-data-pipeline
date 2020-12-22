@@ -56,6 +56,7 @@ dependencies {
     // For local IDE execution
     // Make sure to enable Include dependencies with Provided scope in Intellij's run config
     runtimeOnly "org.apache.flink:flink-clients_2.11:${project.properties['flink_version']}"
+    implementation "org.apache.commons:commons-lang3:${project.properties['apache_commons_version']}"
 
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.properties['jupiter_version']}"

@@ -1,4 +1,4 @@
-package com.pipeline;
+package com.pipeline.aggregators;
 
 import com.pipeline.models.TimeseriesReading;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
@@ -7,6 +7,7 @@ import org.apache.flink.util.Collector;
 
 public class AverageAggregator
         extends ProcessAllWindowFunction<TimeseriesReading, Double, TimeWindow> {
+    private static final long serialVersionUID = 1L;
 
     @Override
     public void process(

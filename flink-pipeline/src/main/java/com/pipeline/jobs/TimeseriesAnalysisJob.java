@@ -1,6 +1,17 @@
-package com.pipeline;
+package com.pipeline.jobs;
 
+import static org.apache.flink.streaming.api.TimeCharacteristic.EventTime;
+
+import com.pipeline.Environment;
+import com.pipeline.aggregators.weighted.ExponentialDecay;
+import com.pipeline.aggregators.weighted.WeightedAverageAggregator;
 import com.pipeline.models.TimeseriesReading;
+import java.time.Duration;
+import java.util.List;
+import java.util.Optional;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Logger;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.serialization.SimpleStringEncoder;
 import org.apache.flink.core.fs.Path;
@@ -15,15 +26,6 @@ import org.apache.flink.streaming.api.windowing.assigners.SlidingEventTimeWindow
 import org.apache.flink.streaming.api.windowing.time.Time;
 import org.apache.flink.streaming.connectors.kafka.FlinkKafkaConsumer;
 
-import java.time.Duration;
-import java.util.List;
-import java.util.Optional;
-import java.util.Properties;
-import java.util.concurrent.TimeUnit;
-import java.util.logging.Logger;
-
-import static org.apache.flink.streaming.api.TimeCharacteristic.EventTime;
-
 public class TimeseriesAnalysisJob {
     private static final Logger LOGGER = Logger.getLogger(TimeseriesAnalysisJob.class.getName());
 
@@ -33,7 +35,7 @@ public class TimeseriesAnalysisJob {
         final StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
         env.setStreamTimeCharacteristic(EventTime);
 
-        var source = getKafkaSource(env).name("source");
+        var source = getLocalSource(env).name("source");
 
         var stream =
                 source.assignTimestampsAndWatermarks(
@@ -43,7 +45,7 @@ public class TimeseriesAnalysisJob {
 
         var aggregatedReadings =
                 stream.windowAll(SlidingEventTimeWindows.of(Time.seconds(3), Time.seconds(1)))
-                        .process(new AverageAggregator())
+                        .process(new WeightedAverageAggregator(new ExponentialDecay()))
                         .name("aggregatedTimeseriesReadings");
 
         aggregatedReadings

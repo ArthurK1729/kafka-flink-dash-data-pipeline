@@ -10,7 +10,7 @@ teardown-cluster:
 	docker-compose kill
 
 submit-timeseries-analysis-job: build-jar
-	./submit-job.sh com.pipeline.TimeseriesAnalysisJob
+	./submit-job.sh com.pipeline.jobs.TimeseriesAnalysisJob
 
 open-flink-ui:
 	open http://localhost:8081
