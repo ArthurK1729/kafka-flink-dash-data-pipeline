@@ -13,7 +13,7 @@ from models import TimeseriesReading
 from producer import AsyncKafkaProducer
 
 
-@dataclass
+@dataclass(frozen=True)
 class GeneratorConfig:
     timeseries_id: int
     topic: str
@@ -39,6 +39,7 @@ async def start_generate(config: GeneratorConfig):
         while True:
             time.sleep(config.delay_seconds)
 
+            # TODO: specify timeseries_id as Kafka key for partitioning
             await asyncio.gather(
                 *[
                     producer.post_event(
