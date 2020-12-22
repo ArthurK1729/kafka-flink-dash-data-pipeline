@@ -1,13 +1,14 @@
 package com.pipeline.aggregators.weighted;
 
+import com.pipeline.aggregators.weighted.functions.WeightFunction;
 import com.pipeline.models.TimeseriesReading;
-import java.util.Comparator;
-import java.util.stream.Collectors;
-import org.apache.flink.shaded.curator4.com.google.common.collect.Streams;
 import org.apache.flink.streaming.api.functions.windowing.ProcessAllWindowFunction;
 import org.apache.flink.streaming.api.windowing.windows.TimeWindow;
 import org.apache.flink.util.Collector;
 import org.apache.flink.util.IterableUtils;
+
+import java.util.Comparator;
+import java.util.stream.Collectors;
 
 public class WeightedAverageAggregator
         extends ProcessAllWindowFunction<TimeseriesReading, Double, TimeWindow> {
@@ -23,19 +24,24 @@ public class WeightedAverageAggregator
     public void process(
             Context context, Iterable<TimeseriesReading> elements, Collector<Double> out) {
 
-        var readings = IterableUtils.toStream(elements).collect(Collectors.toList());
-        var count = Long.valueOf(readings.size());
         var sortedReadings =
-                readings.stream().sorted(Comparator.comparingLong(TimeseriesReading::getTimestamp));
+                IterableUtils.toStream(elements)
+                        .sorted(Comparator.comparingLong(TimeseriesReading::getTimestamp))
+                        .collect(Collectors.toList());
+        var windowSize = Long.valueOf(sortedReadings.size());
 
-        var weightedSum =
-                Streams.mapWithIndex(
-                                sortedReadings,
-                                (reading, index) ->
-                                        this.weightFunction.computeWeight(
-                                                reading.getReading(), index, count))
-                        .reduce(0.0, Double::sum);
+        var index = 0L;
+        var weightedSum = 0.0;
+        var sumOfWeights = 0.0;
 
-        out.collect(weightedSum / count.doubleValue());
+        for (TimeseriesReading reading : sortedReadings) {
+            var value = reading.getReading();
+            var weight = weightFunction.computeWeight(value, index, windowSize);
+
+            weightedSum += value * weight;
+            sumOfWeights += weight;
+        }
+
+        out.collect(weightedSum / sumOfWeights);
     }
 }

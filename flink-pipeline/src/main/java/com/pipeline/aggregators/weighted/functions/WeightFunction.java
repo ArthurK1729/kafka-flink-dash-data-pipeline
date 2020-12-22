@@ -1,4 +1,4 @@
-package com.pipeline.aggregators.weighted;
+package com.pipeline.aggregators.weighted.functions;
 
 import java.io.Serializable;
 

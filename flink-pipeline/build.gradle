@@ -18,6 +18,7 @@ plugins {
     id "com.diffplug.spotless" version "5.5.1"
     id "com.github.johnrengelman.shadow" version "6.1.0"
     id "com.commercehub.gradle.plugin.avro" version "0.21.0"
+    id "com.github.spotbugs" version "4.6.0"
 }
 
 apply plugin: "io.freefair.lombok"
@@ -46,23 +47,31 @@ repositories {
     mavenCentral()
 }
 
+def scalaVer = project.properties['scala_version']
+def flinkVer = project.properties['flink_version']
+
 dependencies {
-    implementation "org.apache.flink:flink-connector-kafka_2.11:${project.properties['flink_version']}"
-    implementation "org.apache.flink:flink-avro:${project.properties['flink_version']}"
-    implementation "org.apache.flink:flink-core:${project.properties['flink_version']}"
-    implementation "org.apache.flink:flink-streaming-java_2.11:${project.properties['flink_version']}"
+    implementation "org.apache.flink:flink-connector-kafka_${scalaVer}:${flinkVer}"
+    implementation "org.apache.flink:flink-avro:${flinkVer}"
+    implementation "org.apache.flink:flink-core:${flinkVer}"
+    implementation "org.apache.flink:flink-streaming-java_${scalaVer}:${flinkVer}"
     implementation "org.apache.avro:avro:${project.properties['avro_version']}"
-    implementation "org.apache.flink:flink-parquet_2.11:${project.properties['flink_version']}"
-    // For local IDE execution
-    // Make sure to enable Include dependencies with Provided scope in Intellij's run config
-    runtimeOnly "org.apache.flink:flink-clients_2.11:${project.properties['flink_version']}"
+    implementation "org.apache.flink:flink-parquet_${scalaVer}:${flinkVer}"
+    runtimeOnly "org.apache.flink:flink-clients_${scalaVer}:${flinkVer}"
     implementation "org.apache.commons:commons-lang3:${project.properties['apache_commons_version']}"
 
 
     testImplementation "org.junit.jupiter:junit-jupiter-api:${project.properties['jupiter_version']}"
+    testImplementation "org.apache.flink:flink-test-utils_${scalaVer}:${flinkVer}"
+    testImplementation "org.apache.flink:flink-runtime_${scalaVer}:${flinkVer}"
+    // To get the test harnesses
+    testImplementation "org.apache.flink:flink-streaming-java_${scalaVer}:${flinkVer}:tests"
+    testImplementation "org.mockito:mockito-core:${project.properties['mockito_version']}"
+    testImplementation "org.assertj:assertj-core:${project.properties['assertj_version']}"
     testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
     implementation "com.google.guava:guava:29.0-jre"
 }
+
 
 spotless {
     java {

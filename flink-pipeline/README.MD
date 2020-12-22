@@ -10,3 +10,8 @@ docker-compose logs -f jobmanager
 ```
 docker network inspect kafka-flink-dash-data-pipeline-network
 ```
+
+### TODO
+1. Install spotbugs plugin
+2. Install Java 11 and set JAVA_HOME
+3. Install lombok plugin
