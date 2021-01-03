@@ -1,0 +1,11 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+generated/*
+
+# Ignore local Flink distribution
+flink-1.12.0
+flink-1.11.2
+*.tgz

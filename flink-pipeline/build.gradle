@@ -1,0 +1,107 @@
+import com.commercehub.gradle.plugin.avro.GenerateAvroJavaTask
+
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        jcenter()
+    }
+    dependencies {
+        classpath "io.freefair.gradle:lombok-plugin:5.3.0"
+        classpath "com.github.jengelman.gradle.plugins:shadow:6.1.0"
+    }
+}
+
+plugins {
+    id "java"
+    id "com.diffplug.spotless" version "5.5.1"
+    id "com.github.johnrengelman.shadow" version "6.1.0"
+    id "com.commercehub.gradle.plugin.avro" version "0.21.0"
+    id "com.github.spotbugs" version "4.6.0"
+}
+
+apply plugin: "io.freefair.lombok"
+apply plugin: "com.github.johnrengelman.shadow"
+// https://github.com/davidmc24/gradle-avro-plugin
+apply plugin: "com.commercehub.gradle.plugin.avro-base"
+
+group = "com.pipeline"
+version = "0.0.1-SNAPSHOT"
+sourceCompatibility = "11"
+
+sourceSets {
+    main {
+        java.srcDirs += "generated"
+    }
+}
+
+configurations {
+    compileOnly {
+        extendsFrom annotationProcessor
+    }
+}
+
+repositories {
+    jcenter()
+    mavenCentral()
+}
+
+def scalaVer = project.properties['scala_version']
+def flinkVer = project.properties['flink_version']
+
+dependencies {
+    implementation "org.apache.flink:flink-connector-kafka_${scalaVer}:${flinkVer}"
+    implementation "org.apache.flink:flink-avro:${flinkVer}"
+    implementation "org.apache.flink:flink-core:${flinkVer}"
+    implementation "org.apache.flink:flink-streaming-java_${scalaVer}:${flinkVer}"
+    implementation "org.apache.avro:avro:${project.properties['avro_version']}"
+    implementation "org.apache.flink:flink-parquet_${scalaVer}:${flinkVer}"
+    runtimeOnly "org.apache.flink:flink-clients_${scalaVer}:${flinkVer}"
+    implementation "org.apache.commons:commons-lang3:${project.properties['apache_commons_version']}"
+
+
+    testImplementation "org.junit.jupiter:junit-jupiter-api:${project.properties['jupiter_version']}"
+    testImplementation "org.apache.flink:flink-test-utils_${scalaVer}:${flinkVer}"
+    testImplementation "org.apache.flink:flink-runtime_${scalaVer}:${flinkVer}"
+    // To get the test harnesses
+    testImplementation "org.apache.flink:flink-streaming-java_${scalaVer}:${flinkVer}:tests"
+    testImplementation "org.mockito:mockito-core:${project.properties['mockito_version']}"
+    testImplementation "org.assertj:assertj-core:${project.properties['assertj_version']}"
+    testRuntimeOnly "org.junit.jupiter:junit-jupiter-engine"
+    implementation "com.google.guava:guava:29.0-jre"
+}
+
+
+spotless {
+    java {
+        googleJavaFormat("1.9").aosp()
+        target fileTree(rootDir) {
+            include '**/*.java'
+            exclude '**/com/pipeline/models/*.*'
+        }
+    }
+}
+
+tasks.named("test") {
+    useJUnitPlatform()
+}
+
+jar {
+    manifest {
+        attributes "Main-Class": "com.pipeline.TimeseriesAnalysisJob"
+    }
+
+    from {
+        configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
+
+def generateAvro = tasks.register("generateAvro", GenerateAvroJavaTask) {
+    source("../schema")
+    outputDir = file("generated")
+}
+
+tasks.named("compileJava").configure {
+    source(generateAvro)
+}
